@@ -49,6 +49,10 @@ body {
   font-size: 12px;
 }
 
+a {
+  color: var(--accent);
+}
+
 .brand {
   display: flex;
   align-items: center;

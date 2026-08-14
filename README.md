@@ -109,8 +109,8 @@ implementation via the Stripe CLI, test mode).
 See `STORE_LISTING.md` for the actual listing copy and permission
 justifications. Steps:
 
-1. Enable GitHub Pages on this repo (Settings → Pages → source: `docs/` on
-   `main`) so the privacy policy has a public URL.
+1. ~~Enable GitHub Pages~~ — done: https://sarthakuwar.github.io/gmail-notes-panel/
+   (privacy policy: `/privacy.html`, terms: `/terms.html`).
 2. Zip the `extension/` folder's *contents* (not the folder itself —
    `manifest.json` should be at the zip's root).
 3. Create a one-time Chrome Web Store developer account ($5 fee):
