@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Gmail Notes</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <div id="signed-out" class="screen hidden">
+      <div class="brand">
+        <img src="icons/icon48.png" alt="" width="40" height="40" />
+        <h1>Gmail Notes</h1>
+      </div>
+      <p class="muted">Notes, tags, and last-contacted — right next to your inbox. No pipelines, no deal stages.</p>
+      <button id="sign-in-btn" class="btn-primary">Sign in with Google</button>
+      <p id="auth-error" class="error hidden"></p>
+    </div>
+
+    <div id="paywall" class="screen hidden">
+      <div class="brand">
+        <img src="icons/icon48.png" alt="" width="40" height="40" />
+        <h1 id="paywall-title">Start your free trial</h1>
+      </div>
+      <p class="muted" id="paywall-copy">
+        7 days free, then $4/month. Cancel anytime from the subscription management page — no charge until your
+        trial ends.
+      </p>
+      <button id="paywall-btn" class="btn-primary">Start 7-day free trial</button>
+      <p id="paywall-waiting" class="muted small hidden">Waiting for checkout to complete…</p>
+      <p id="paywall-error" class="error hidden"></p>
+      <button id="paywall-signout-btn" class="btn-link">Sign out</button>
+    </div>
+
+    <div id="loading" class="screen hidden">
+      <p class="muted">Loading…</p>
+    </div>
+
+    <div id="app" class="screen hidden app">
+      <header class="app-header">
+        <nav class="tabs">
+          <button id="tab-current" class="tab active" data-tab="current">Current</button>
+          <button id="tab-list" class="tab" data-tab="list">All contacts</button>
+        </nav>
+        <button id="sign-out-btn" class="btn-icon" title="Sign out">⎋</button>
+      </header>
+
+      <div id="trial-banner" class="trial-banner hidden">
+        <span id="trial-banner-text"></span>
+        <button id="manage-sub-btn" class="btn-link">Manage</button>
+      </div>
+
+      <div id="view-current" class="view">
+        <div id="empty-current" class="view-empty muted hidden">
+          Open an email in Gmail to see notes for that person here.
+        </div>
+
+        <div id="contact" class="contact hidden">
+          <div class="contact-head">
+            <div>
+              <div id="contact-name" class="name"></div>
+              <div id="contact-email" class="email"></div>
+            </div>
+            <span id="reminder-badge" class="badge hidden" title="Follow-up due">●</span>
+          </div>
+
+          <div class="field">
+            <label>Last contacted</label>
+            <div id="last-contacted" class="value">—</div>
+          </div>
+
+          <div class="field">
+            <label for="tags-input">Tags</label>
+            <input id="tags-input" type="text" placeholder="e.g. lead, referral, follow-up" />
+          </div>
+
+          <div class="field">
+            <label for="remind-input">Remind me</label>
+            <input id="remind-input" type="date" />
+          </div>
+
+          <div class="field grow">
+            <label for="note-input">Note</label>
+            <textarea id="note-input" placeholder="What did you last talk about? Anything to remember?"></textarea>
+          </div>
+
+          <div id="save-status" class="save-status muted"></div>
+        </div>
+      </div>
+
+      <div id="view-list" class="view hidden">
+        <div class="list-controls">
+          <input id="list-search" type="text" placeholder="Search notes, names, emails…" />
+          <div id="list-tags" class="chip-row"></div>
+        </div>
+        <div id="list-items" class="list-items"></div>
+        <div id="list-empty" class="view-empty muted hidden">No contacts yet — open a thread in Gmail to add one.</div>
+      </div>
+    </div>
+
+    <script src="sidepanel.js" type="module"></script>
+  </body>
+</html>

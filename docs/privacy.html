@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — Gmail Notes</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        color: #202124;
+        background: #fff;
+        line-height: 1.6;
+      }
+      .wrap { max-width: 680px; margin: 0 auto; padding: 48px 20px 80px; }
+      h1 { font-size: 26px; margin-bottom: 4px; }
+      .updated { color: #5f6368; font-size: 13px; margin-bottom: 32px; }
+      h2 { font-size: 17px; margin-top: 36px; }
+      p, li { font-size: 14px; color: #3c4043; }
+      ul { padding-left: 20px; }
+      code { background: #f1f3f4; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+      a { color: #1a73e8; }
+      .badge { display: inline-block; background: #1a73e8; color: #fff; border-radius: 6px; padding: 3px 8px; font-size: 12px; margin-bottom: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <span class="badge">Gmail Notes</span>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated August 14, 2026</p>
+
+      <p>
+        Gmail Notes is a Chrome extension that shows notes, tags, and follow-up reminders for
+        whoever's email thread you have open in Gmail. This page explains exactly what data the
+        extension reads, what it stores, and how you can get it deleted.
+      </p>
+
+      <h2>What we read from Gmail</h2>
+      <p>
+        The extension's content script runs only on <code>mail.google.com</code> and reads two
+        things directly out of the page you're already viewing:
+      </p>
+      <ul>
+        <li>The name and email address of the other participant in the open thread.</li>
+        <li>The timestamp of the most recent message in that thread.</li>
+      </ul>
+      <p>
+        <strong>We never read message bodies, subject lines, attachments, or any other Gmail
+        content.</strong> Nothing is read from threads you don't have open.
+      </p>
+
+      <h2>What we store</h2>
+      <p>For each contact you add a note to, we store:</p>
+      <ul>
+        <li>Their email address and (if available) name</li>
+        <li>The note text and tags you write</li>
+        <li>An optional follow-up reminder date you set</li>
+        <li>The last-contacted date, derived from the Gmail timestamp above</li>
+      </ul>
+      <p>
+        This is stored in a Postgres database (hosted on Supabase), keyed to your Google account's
+        email address. It is never sold, shared, or used for advertising.
+      </p>
+
+      <h2>Signing in</h2>
+      <p>
+        Sign-in uses Google OAuth and requests only two non-sensitive scopes:
+        <code>userinfo.email</code> and <code>userinfo.profile</code> — enough to know who you
+        are, nothing more (we cannot read or send email on your behalf). Your Google access token
+        is verified against Google's own servers on every request; a refresh token is stored
+        locally in your browser (not accessible to other extensions or websites) so you don't have
+        to sign in repeatedly. You can revoke access at any time from your
+        <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google
+        Account's connected-apps page</a>, or by using "Sign out" in the extension.
+      </p>
+
+      <h2>Billing</h2>
+      <p>
+        Gmail Notes is a paid extension ($4/month after a 7-day free trial). Payment is handled
+        entirely by <a href="https://stripe.com" target="_blank" rel="noopener">Stripe</a> — we
+        never see or store your card number. We store only your subscription status and Stripe
+        customer/subscription IDs, needed to know whether your account has access.
+      </p>
+
+      <h2>Data deletion</h2>
+      <p>
+        Signing out clears your session locally but does not delete your notes from our database
+        (so they're there if you sign back in). To request deletion of all your data, email
+        <a href="mailto:fixturftw@gmail.com">fixturftw@gmail.com</a> from the Google account you
+        used to sign in, and we'll delete it within 7 days.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy: <a href="mailto:fixturftw@gmail.com">fixturftw@gmail.com</a>.
+      </p>
+    </div>
+  </body>
+</html>
