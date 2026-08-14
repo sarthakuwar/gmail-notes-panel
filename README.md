@@ -55,9 +55,9 @@ Project: `ngtdhqqlgrzlioenztgp` (Supabase). Already done:
 - [x] `contact-api` and `billing-api` (Polar) edge functions written.
 - [x] Google OAuth secrets set, both edge functions deployed and smoke-tested.
 - [x] Extension icons/manifest, GitHub Pages for privacy/terms.
-- [ ] Polar sandbox product + webhook + access token — needs your Polar
-      account (see below), since there's no CLI/API shortcut for this the
-      way there was with Stripe.
+- [x] Polar sandbox and **production** product + webhook + access token set
+      up and verified — see "Going live" below.
+- [ ] Chrome Web Store submission (see that section below) — not yet done.
 
 ### Setting up Polar (sandbox first, same pattern as everything else here)
 
@@ -130,20 +130,18 @@ justifications. Steps:
 
 ## Going live (real money)
 
-Everything above runs on Polar's **sandbox** environment — no real
-charges. Before launching for real:
+**Done** — `billing-api` runs on Polar **production** as of 2026-08-14.
+`POLAR_ENVIRONMENT=production`, with a production Organization Access
+Token, product ("Noterra Pro", $3.99/mo), and webhook endpoint. Verified
+with a hand-signed test webhook (not a real checkout — Polar production
+has no test cards) that signature verification and the `subscriptions`
+upsert both work correctly under the production secret.
 
-1. In the Polar dashboard (production, not sandbox — https://polar.sh, not
-   sandbox.polar.sh), re-create the product/price there (sandbox objects
-   don't carry over) at **$3.99/month**.
-2. Create a production **Organization Access Token** and a production
-   webhook endpoint (same URL/events as sandbox).
-3. Update `POLAR_ENVIRONMENT=production`, `POLAR_ACCESS_TOKEN`,
-   `POLAR_PRODUCT_ID`, `POLAR_WEBHOOK_SECRET` Supabase secrets with the
-   production values, redeploy `billing-api`.
-
-Do this deliberately, when you're actually ready to charge people — not as
-part of routine deploys.
+Sandbox values are kept commented out in `supabase/.env.local` for future
+testing without touching production. To ever repeat this process (e.g.
+rotating credentials): re-create the product/price/token/webhook in the
+relevant Polar dashboard, update the four `POLAR_*` Supabase secrets, and
+redeploy `billing-api` so it picks them up on a fresh cold start.
 
 ## Known limitations / next steps
 
