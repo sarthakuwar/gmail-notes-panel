@@ -293,7 +293,9 @@ function scheduleSave() {
       });
       document.getElementById("reminder-badge").classList.toggle("hidden", !isDue(remindAt));
       if (myToken === saveToken) statusEl.textContent = "Saved";
-      loadContactsList(); // keep the list view's tags/reminders in sync
+      // Keep the list view's tags/reminders in sync, but only bother
+      // re-fetching if it's actually visible right now.
+      if (!document.getElementById("view-list").classList.contains("hidden")) loadContactsList();
     } catch (err) {
       if (err instanceof SubscriptionRequiredError) {
         showPaywall("none");

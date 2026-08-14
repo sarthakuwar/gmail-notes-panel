@@ -87,7 +87,10 @@ async function syncSubscriptionFromStripe(subscription: Stripe.Subscription, own
   const customerId =
     typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
 
-  let owner = ownerEmail;
+  // subscription.metadata is set at checkout-creation time (subscription_data.metadata
+  // below) so it's present on every subsequent event for this subscription without an
+  // extra API call. Customer-metadata lookup is a fallback for older/edge-case events.
+  let owner = ownerEmail ?? subscription.metadata?.owner_email;
   if (!owner) {
     const customer = await stripe.customers.retrieve(customerId);
     owner = !("deleted" in customer && customer.deleted) ? (customer as Stripe.Customer).metadata?.owner_email : undefined;
@@ -181,7 +184,10 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-      subscription_data: { trial_period_days: 7 },
+      // metadata here lands on the Subscription object itself, so every future
+      // webhook event for it (renewals, cancellations) carries owner_email without
+      // an extra API call — see syncSubscriptionFromStripe.
+      subscription_data: { trial_period_days: 7, metadata: { owner_email: ownerEmail } },
       customer_email: ownerEmail,
       metadata: { owner_email: ownerEmail },
       success_url: doneUrl,
