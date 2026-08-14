@@ -8,3 +8,6 @@ supabase/.env.local
 .agents/
 .claude/
 skills-lock.json
+
+# Supabase CLI local state (created by `supabase link`/`secrets set`)
+supabase/.temp/
