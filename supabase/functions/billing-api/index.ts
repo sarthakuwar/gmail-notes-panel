@@ -1,25 +1,34 @@
-// Supabase Edge Function: Stripe billing for the $4/mo subscription.
+// Supabase Edge Function: Polar billing for the $4.99/mo subscription.
 //
-// Checkout and the Billing Portal are both Stripe-hosted pages opened in a
-// new browser tab (chrome.tabs.create) since Stripe Checkout can't run
-// inside the extension's side panel iframe. This function also serves a
-// tiny static confirmation page for those tabs to land on (GET /done) so
-// we don't need a separate static host just for that.
+// Polar is a merchant of record (like Paddle/Lemon Squeezy) rather than a
+// direct payment processor — it handles global tax compliance and, unlike
+// Stripe, doesn't require the seller to be an invite-only-approved
+// registered business in every country. Talks to Polar's REST API with
+// plain fetch() (no SDK) so this stays dependency-free and easy to audit,
+// same as the Google token handling in contact-api.
 //
-// The webhook route (POST /webhook) is the only route Stripe itself calls;
+// Checkout and the Customer Portal are both Polar-hosted pages opened in a
+// new browser tab (chrome.tabs.create) since neither can run inside the
+// extension's side panel iframe. This function also serves a tiny static
+// confirmation page for those tabs to land on (GET /done).
+//
+// The webhook route (POST /webhook) is the only route Polar itself calls;
 // it has no Google bearer token, so it's routed before the token check and
-// instead verifies the Stripe-Signature header.
-import Stripe from "https://esm.sh/stripe@18?target=deno";
+// instead verifies the Standard Webhooks signature Polar signs events with.
 import { verifyGoogleToken, bearerToken } from "../_shared/google.ts";
+import { getSubscription } from "../_shared/subscription.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
-  httpClient: Stripe.createFetchHttpClient(),
-});
-const cryptoProvider = Stripe.createSubtleCryptoProvider();
+// "sandbox" while testing, "production" once actually charging people —
+// see README "Going live". Everything else (token, product, webhook
+// secret) is environment-specific too and must be swapped together.
+const POLAR_ENVIRONMENT = Deno.env.get("POLAR_ENVIRONMENT") ?? "sandbox";
+const POLAR_API_BASE =
+  POLAR_ENVIRONMENT === "production" ? "https://api.polar.sh/v1" : "https://sandbox-api.polar.sh/v1";
 
-const STRIPE_PRICE_ID = Deno.env.get("STRIPE_PRICE_ID")!;
-const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
+const POLAR_ACCESS_TOKEN = Deno.env.get("POLAR_ACCESS_TOKEN")!;
+const POLAR_PRODUCT_ID = Deno.env.get("POLAR_PRODUCT_ID")!;
+const POLAR_WEBHOOK_SECRET = Deno.env.get("POLAR_WEBHOOK_SECRET")!;
 
 const supabase = createClient(
   Deno.env.get("SB_URL")!,
@@ -58,55 +67,85 @@ const DONE_PAGE = `<!doctype html>
   <p>You can close this tab and go back to Gmail — the notes panel will unlock automatically in a few seconds.</p>
 </div></body></html>`;
 
-async function getSubscriptionRow(ownerEmail: string) {
-  const { data } = await supabase
-    .from("subscriptions")
-    .select("owner_email, stripe_customer_id, stripe_subscription_id, status, current_period_end")
-    .eq("owner_email", ownerEmail)
-    .maybeSingle();
-  return (
-    data ?? {
-      owner_email: ownerEmail,
-      stripe_customer_id: null,
-      stripe_subscription_id: null,
-      status: "none" as const,
-      current_period_end: null,
-    }
-  );
+async function polarFetch(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${POLAR_API_BASE}${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${POLAR_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail ? JSON.stringify(data.detail) : `Polar API error: ${res.status}`);
+  return data;
 }
 
-function stripeStatusToOurs(status: Stripe.Subscription.Status) {
-  // Stripe has a couple more granular statuses (incomplete, incomplete_expired,
-  // paused) — fold those into "none"/"canceled" since we only distinguish
-  // "has access" (trialing/active) from everything else.
-  if (status === "trialing" || status === "active" || status === "past_due" || status === "unpaid") return status;
-  return "canceled" as const;
+// Standard Webhooks verification (https://www.standardwebhooks.com/) — Polar
+// signs events this way rather than a Stripe-style scheme. Headers:
+// webhook-id, webhook-timestamp, webhook-signature ("v1,<base64 sig>",
+// space-delimited for key rotation). Signed content is "{id}.{timestamp}.{raw body}",
+// HMAC-SHA256 keyed by the base64-decoded secret (after stripping the
+// "whsec_" prefix Polar's secret comes with).
+async function verifyPolarSignature(rawBody: string, headers: Headers): Promise<void> {
+  const id = headers.get("webhook-id");
+  const timestamp = headers.get("webhook-timestamp");
+  const signatureHeader = headers.get("webhook-signature");
+  if (!id || !timestamp || !signatureHeader) throw new Error("missing webhook signature headers");
+
+  const ageSeconds = Math.abs(Date.now() / 1000 - Number(timestamp));
+  if (!Number.isFinite(ageSeconds) || ageSeconds > 5 * 60) throw new Error("webhook timestamp outside tolerance");
+
+  const secretBytes = base64Decode(POLAR_WEBHOOK_SECRET.replace(/^whsec_/, ""));
+  const key = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signedContent = `${id}.${timestamp}.${rawBody}`;
+  const macBytes = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedContent)));
+  const expected = base64Encode(macBytes);
+
+  const provided = signatureHeader
+    .split(" ")
+    .map((part) => part.split(",")[1])
+    .filter(Boolean);
+  if (!provided.some((sig) => timingSafeEqual(sig, expected))) throw new Error("signature mismatch");
 }
 
-async function syncSubscriptionFromStripe(subscription: Stripe.Subscription, ownerEmail?: string) {
-  const customerId =
-    typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+function base64Decode(b64: string): Uint8Array {
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+}
 
-  // subscription.metadata is set at checkout-creation time (subscription_data.metadata
-  // below) so it's present on every subsequent event for this subscription without an
-  // extra API call. Customer-metadata lookup is a fallback for older/edge-case events.
-  let owner = ownerEmail ?? subscription.metadata?.owner_email;
-  if (!owner) {
-    const customer = await stripe.customers.retrieve(customerId);
-    owner = !("deleted" in customer && customer.deleted) ? (customer as Stripe.Customer).metadata?.owner_email : undefined;
+function base64Encode(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes));
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+type OurStatus = "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "none";
+
+function polarStatusToOurs(status: string): OurStatus {
+  // Polar also has "incomplete"/"incomplete_expired"/"paused" — fold those
+  // into "none" since we only distinguish "has access" from everything else.
+  if (status === "trialing" || status === "active" || status === "past_due" || status === "unpaid") {
+    return status;
   }
-  if (!owner) return; // no way to trace this event back to an owner — nothing to do
+  return "none";
+}
 
-  const item = subscription.items.data[0];
+async function syncSubscriptionFromPolar(subscription: Record<string, any>) {
+  const ownerEmail = subscription.customer?.external_id;
+  if (!ownerEmail) return; // no way to trace this event back to an owner — nothing to do
+
   const { error } = await supabase.from("subscriptions").upsert(
     {
-      owner_email: owner,
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscription.id,
-      status: stripeStatusToOurs(subscription.status),
-      current_period_end: item?.current_period_end
-        ? new Date(item.current_period_end * 1000).toISOString()
-        : null,
+      owner_email: ownerEmail,
+      billing_customer_id: subscription.customer_id,
+      billing_subscription_id: subscription.id,
+      status: polarStatusToOurs(subscription.status),
+      current_period_end: subscription.current_period_end ?? null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "owner_email" },
@@ -123,37 +162,21 @@ Deno.serve(async (req) => {
     return html(DONE_PAGE);
   }
 
-  // --- Stripe calls this directly; verify by signature, not a Google token. ---
+  // --- Polar calls this directly; verify by signature, not a Google token. ---
   if (req.method === "POST" && url.pathname.endsWith("/webhook")) {
-    const signature = req.headers.get("Stripe-Signature");
-    const body = await req.text();
-    if (!signature) return json({ error: "missing signature" }, 400);
-
-    let event: Stripe.Event;
+    const rawBody = await req.text();
     try {
-      event = await stripe.webhooks.constructEventAsync(body, signature, STRIPE_WEBHOOK_SECRET, undefined, cryptoProvider);
+      await verifyPolarSignature(rawBody, req.headers);
     } catch (err) {
       return json({ error: `signature verification failed: ${(err as Error).message}` }, 400);
     }
 
+    const event = JSON.parse(rawBody);
     try {
-      switch (event.type) {
-        case "checkout.session.completed": {
-          const session = event.data.object as Stripe.Checkout.Session;
-          if (session.mode === "subscription" && session.subscription) {
-            const subscriptionId =
-              typeof session.subscription === "string" ? session.subscription : session.subscription.id;
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            await syncSubscriptionFromStripe(subscription, session.metadata?.owner_email ?? undefined);
-          }
-          break;
-        }
-        case "customer.subscription.updated":
-        case "customer.subscription.deleted": {
-          const subscription = event.data.object as Stripe.Subscription;
-          await syncSubscriptionFromStripe(subscription);
-          break;
-        }
+      if (event.type === "subscription.created" || event.type === "subscription.updated") {
+        await syncSubscriptionFromPolar(event.data);
+      } else if (event.type === "subscription.revoked") {
+        await syncSubscriptionFromPolar({ ...event.data, status: "canceled" });
       }
     } catch (err) {
       console.error("webhook handling error", err);
@@ -175,36 +198,40 @@ Deno.serve(async (req) => {
   }
 
   if (req.method === "GET" && url.pathname.endsWith("/status")) {
-    const row = await getSubscriptionRow(ownerEmail);
+    const row = await getSubscription(ownerEmail);
     return json(row);
   }
 
   if (req.method === "POST" && url.pathname.endsWith("/checkout")) {
     const doneUrl = `${url.origin}${url.pathname.replace(/\/checkout$/, "/done")}`;
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-      // metadata here lands on the Subscription object itself, so every future
-      // webhook event for it (renewals, cancellations) carries owner_email without
-      // an extra API call — see syncSubscriptionFromStripe.
-      subscription_data: { trial_period_days: 7, metadata: { owner_email: ownerEmail } },
-      customer_email: ownerEmail,
-      metadata: { owner_email: ownerEmail },
-      success_url: doneUrl,
-      cancel_url: doneUrl,
-    });
-    return json({ url: session.url });
+    try {
+      const session = await polarFetch("/checkouts", {
+        method: "POST",
+        body: JSON.stringify({
+          products: [POLAR_PRODUCT_ID],
+          customer_email: ownerEmail,
+          external_customer_id: ownerEmail,
+          trial_interval: "day",
+          trial_interval_count: 7,
+          success_url: doneUrl,
+        }),
+      });
+      return json({ url: session.url });
+    } catch (err) {
+      return json({ error: (err as Error).message }, 502);
+    }
   }
 
   if (req.method === "POST" && url.pathname.endsWith("/portal")) {
-    const row = await getSubscriptionRow(ownerEmail);
-    if (!row.stripe_customer_id) return json({ error: "no subscription on file" }, 404);
-    const doneUrl = `${url.origin}${url.pathname.replace(/\/portal$/, "/done")}`;
-    const session = await stripe.billingPortal.sessions.create({
-      customer: row.stripe_customer_id,
-      return_url: doneUrl,
-    });
-    return json({ url: session.url });
+    try {
+      const session = await polarFetch("/customer-sessions", {
+        method: "POST",
+        body: JSON.stringify({ external_customer_id: ownerEmail }),
+      });
+      return json({ url: session.customer_portal_url });
+    } catch {
+      return json({ error: "no subscription on file" }, 404);
+    }
   }
 
   return json({ error: "not found" }, 404);

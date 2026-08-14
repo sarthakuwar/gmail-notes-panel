@@ -127,11 +127,11 @@ function showPaywall(status) {
   if (status === "canceled" || status === "past_due" || status === "unpaid") {
     title.textContent = "Your subscription needs attention";
     copy.textContent = "Your trial or subscription has ended. Resubscribe to keep using Gmail Notes.";
-    btn.textContent = "Resubscribe — $4/month";
+    btn.textContent = "Resubscribe — $4.99/month";
   } else {
     title.textContent = "Start your free trial";
     copy.textContent =
-      "7 days free, then $4/month. Cancel anytime from the subscription management page — no charge until your trial ends.";
+      "7 days free, then $4.99/month. Cancel anytime from the subscription management page — no charge until your trial ends.";
     btn.textContent = "Start 7-day free trial";
   }
   document.getElementById("paywall-error").classList.add("hidden");

@@ -11,7 +11,7 @@ live at https://sarthakuwar.github.io/gmail-notes-panel/privacy.html.
 
 ## Short description (132 char max)
 
-Notes, tags, and follow-up reminders for whoever's email thread is open in Gmail. $4/mo, 7-day free trial.
+Notes, tags, and follow-up reminders for whoever's email thread is open in Gmail. $4.99/mo, 7-day free trial.
 
 ## Detailed description
 
@@ -28,7 +28,7 @@ no pipelines, no deal stages, just notes keyed by whoever you're emailing.
   old threads to remember what you talked about.
 
 Sign in with Google — the same account you use for Gmail, no separate
-signup. 7 days free, then $4/month. Cancel anytime.
+signup. 7 days free, then $4.99/month. Cancel anytime.
 
 Gmail Notes only reads the sender name/email and timestamp of the thread
 you have open — never message bodies or attachments. Full privacy policy:
@@ -81,5 +81,5 @@ Suggested shots, captured from the loaded extension in Chrome:
   https://chrome.google.com/webstore/devconsole
 - The screenshots above (I can't capture real Chrome Web Store screenshots
   without the extension already loaded in your browser).
-- Swap Stripe to live-mode keys when ready to actually charge (see
+- Swap Polar to production credentials when ready to actually charge (see
   README's "Going live" section) — do this deliberately, not by default.

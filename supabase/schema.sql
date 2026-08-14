@@ -24,12 +24,12 @@ alter table contacts add column if not exists remind_at date;
 -- client ever talks to this table directly.
 alter table contacts enable row level security;
 
--- Mirrors Stripe's own subscription status per owner — kept in sync by the
--- billing-api webhook handler. Deliberately no independent trial-clock
--- logic here: Stripe's Billing APIs own the trial/renewal state machine
--- (see subscription_data.trial_period_days in billing-api), this table
--- just caches the latest status so contact-api can gate access without an
--- API call to Stripe on every request.
+-- Mirrors the payment provider's own subscription status per owner — kept
+-- in sync by the billing-api webhook handler. Deliberately no independent
+-- trial-clock logic here: the provider's checkout trial config owns the
+-- trial/renewal state machine, this table just caches the latest status so
+-- contact-api can gate access without an API call to the provider on every
+-- request.
 create table if not exists subscriptions (
   owner_email text primary key,
   stripe_customer_id text,
@@ -40,6 +40,12 @@ create table if not exists subscriptions (
 );
 
 create index if not exists subscriptions_customer_idx on subscriptions (stripe_customer_id);
+
+-- Switched payment providers from Stripe to Polar (Stripe is invite-only in
+-- India for individuals; Polar is a merchant of record that supports it) —
+-- column names generalized since they're no longer Stripe-specific.
+alter table subscriptions rename column stripe_customer_id to billing_customer_id;
+alter table subscriptions rename column stripe_subscription_id to billing_subscription_id;
 
 -- Same pattern as contacts: no client-side access, only the edge functions
 -- (contact-api reads it, billing-api writes it) using the service-role key.
