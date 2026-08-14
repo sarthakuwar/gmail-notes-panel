@@ -46,7 +46,10 @@ async function authedFetch(baseUrl, pathWithQuery, options = {}, retry = true) {
     return authedFetch(baseUrl, pathWithQuery, options, false);
   }
   if (res.status === 402) throw new SubscriptionRequiredError();
-  if (!res.ok) throw new Error(`Backend error: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Backend error: ${res.status}`);
+  }
   return res.json();
 }
 
@@ -187,11 +190,20 @@ function pollForActiveSubscription() {
 }
 
 async function openBillingPortal() {
+  const btn = document.getElementById("manage-sub-btn");
+  const originalText = btn.textContent;
+  btn.disabled = true;
   try {
     const { url } = await billingApi("/portal", { method: "POST" });
     chrome.tabs.create({ url });
-  } catch {
-    // no-op — this is a "manage" convenience link, not critical path
+  } catch (err) {
+    btn.textContent = "Couldn't open — try again";
+    setTimeout(() => {
+      btn.textContent = originalText;
+    }, 3000);
+    console.error("openBillingPortal failed:", err);
+  } finally {
+    btn.disabled = false;
   }
 }
 
