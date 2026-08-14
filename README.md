@@ -2,7 +2,7 @@
 
 A Chrome side panel that shows notes, tags, and follow-up reminders for
 whoever's email thread you have open in Gmail. No pipelines, no deal
-stages — just notes keyed by email address. $4.99/month after a 7-day free
+stages — just notes keyed by email address. $3.99/month after a 7-day free
 trial.
 
 ```
@@ -65,7 +65,7 @@ Project: `ngtdhqqlgrzlioenztgp` (Supabase). Already done:
    to https://sandbox.polar.sh (sandbox is a fully separate environment
    from production; test payments there before ever touching real money).
 2. Create a product: name "Gmail Notes Pro", recurring monthly price
-   **$4.99 USD**. Copy the **Product ID**.
+   **$3.99 USD**. Copy the **Product ID**.
 3. Organization settings → create an **Organization Access Token**. Copy it.
 4. Organization settings → Webhooks → *Add Endpoint* → URL
    `https://ngtdhqqlgrzlioenztgp.supabase.co/functions/v1/billing-api/webhook`,
@@ -135,7 +135,7 @@ charges. Before launching for real:
 
 1. In the Polar dashboard (production, not sandbox — https://polar.sh, not
    sandbox.polar.sh), re-create the product/price there (sandbox objects
-   don't carry over) at **$4.99/month**.
+   don't carry over) at **$3.99/month**.
 2. Create a production **Organization Access Token** and a production
    webhook endpoint (same URL/events as sandbox).
 3. Update `POLAR_ENVIRONMENT=production`, `POLAR_ACCESS_TOKEN`,

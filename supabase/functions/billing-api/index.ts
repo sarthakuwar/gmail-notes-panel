@@ -1,4 +1,4 @@
-// Supabase Edge Function: Polar billing for the $4.99/mo subscription.
+// Supabase Edge Function: Polar billing for the $3.99/mo subscription.
 //
 // Polar is a merchant of record (like Paddle/Lemon Squeezy) rather than a
 // direct payment processor — it handles global tax compliance and, unlike
