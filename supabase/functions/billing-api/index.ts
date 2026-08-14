@@ -81,12 +81,15 @@ async function polarFetch(path: string, options: RequestInit = {}) {
   return data;
 }
 
-// Standard Webhooks verification (https://www.standardwebhooks.com/) — Polar
-// signs events this way rather than a Stripe-style scheme. Headers:
-// webhook-id, webhook-timestamp, webhook-signature ("v1,<base64 sig>",
-// space-delimited for key rotation). Signed content is "{id}.{timestamp}.{raw body}",
-// HMAC-SHA256 keyed by the base64-decoded secret (after stripping the
-// "whsec_" prefix Polar's secret comes with).
+// Signature verification for Polar's webhooks. Docs point at the Standard
+// Webhooks spec (https://www.standardwebhooks.com/), but Polar's actual
+// implementation diverges from that spec's usual "strip whsec_, base64-decode
+// the rest" key handling: empirically (verified against a real captured
+// payload + signature via the /v1/webhooks/deliveries API), the HMAC key is
+// the full secret string, "whsec_" prefix included, taken as raw UTF-8 bytes
+// — not base64-decoded at all. Headers: webhook-id, webhook-timestamp,
+// webhook-signature ("v1,<base64 sig>", space-delimited for key rotation).
+// Signed content is "{id}.{timestamp}.{raw body}".
 async function verifyPolarSignature(rawBody: string, headers: Headers): Promise<void> {
   const id = headers.get("webhook-id");
   const timestamp = headers.get("webhook-timestamp");
@@ -96,7 +99,7 @@ async function verifyPolarSignature(rawBody: string, headers: Headers): Promise<
   const ageSeconds = Math.abs(Date.now() / 1000 - Number(timestamp));
   if (!Number.isFinite(ageSeconds) || ageSeconds > 5 * 60) throw new Error("webhook timestamp outside tolerance");
 
-  const secretBytes = base64Decode(POLAR_WEBHOOK_SECRET.replace(/^whsec_/, ""));
+  const secretBytes = new TextEncoder().encode(POLAR_WEBHOOK_SECRET);
   const key = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signedContent = `${id}.${timestamp}.${rawBody}`;
   const macBytes = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedContent)));
@@ -107,10 +110,6 @@ async function verifyPolarSignature(rawBody: string, headers: Headers): Promise<
     .map((part) => part.split(",")[1])
     .filter(Boolean);
   if (!provided.some((sig) => timingSafeEqual(sig, expected))) throw new Error("signature mismatch");
-}
-
-function base64Decode(b64: string): Uint8Array {
-  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 }
 
 function base64Encode(bytes: Uint8Array): string {
@@ -229,8 +228,9 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ external_customer_id: ownerEmail }),
       });
       return json({ url: session.customer_portal_url });
-    } catch {
-      return json({ error: "no subscription on file" }, 404);
+    } catch (err) {
+      console.error("portal session creation failed", (err as Error).message);
+      return json({ error: (err as Error).message }, 404);
     }
   }
 
