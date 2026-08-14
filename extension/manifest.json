@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Gmail Notes",
+  "name": "Noterra",
   "version": "0.2.0",
   "description": "Notes, tags, and follow-up reminders for whoever's email thread is open in Gmail — right in the side panel.",
   "permissions": ["identity", "sidePanel", "storage"],
@@ -26,7 +26,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Gmail Notes",
+    "default_title": "Noterra",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

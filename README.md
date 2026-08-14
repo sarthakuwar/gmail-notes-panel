@@ -1,4 +1,4 @@
-# Gmail Notes
+# Noterra
 
 A Chrome side panel that shows notes, tags, and follow-up reminders for
 whoever's email thread you have open in Gmail. No pipelines, no deal
@@ -64,7 +64,7 @@ Project: `ngtdhqqlgrzlioenztgp` (Supabase). Already done:
 1. Sign up at https://polar.sh and create an organization — or go straight
    to https://sandbox.polar.sh (sandbox is a fully separate environment
    from production; test payments there before ever touching real money).
-2. Create a product: name "Gmail Notes Pro", recurring monthly price
+2. Create a product: name "Noterra Pro", recurring monthly price
    **$3.99 USD**. Copy the **Product ID**.
 3. Organization settings → create an **Organization Access Token**. Copy it.
 4. Organization settings → Webhooks → *Add Endpoint* → URL
@@ -117,9 +117,9 @@ Project: `ngtdhqqlgrzlioenztgp` (Supabase). Already done:
 See `STORE_LISTING.md` for the actual listing copy and permission
 justifications. Steps:
 
-1. ~~Enable GitHub Pages~~ — done: https://sarthakuwar.github.io/gmail-notes-panel/
+1. ~~Enable GitHub Pages~~ — done: https://sarthakuwar.github.io/noterra/
    (privacy policy: `/privacy.html`, terms: `/terms.html`).
-2. Package the extension: `dist/gmail-notes.zip` (manifest at the zip's
+2. Package the extension: `dist/noterra.zip` (manifest at the zip's
    root, exactly what the Dashboard expects — rebuild it any time by
    staging `extension/`'s files, minus `icons/gen_icons.py`, into a temp
    folder and zipping that).

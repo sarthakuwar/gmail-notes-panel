@@ -1,11 +1,11 @@
 # Chrome Web Store listing content
 
 Copy-paste source for the Developer Dashboard fields. Privacy policy is
-live at https://sarthakuwar.github.io/gmail-notes-panel/privacy.html.
+live at https://sarthakuwar.github.io/noterra/privacy.html.
 
 ## Basic info
 
-- **Extension name:** Gmail Notes
+- **Extension name:** Noterra
 - **Category:** Productivity
 - **Language:** English
 
@@ -16,7 +16,7 @@ Notes, tags, and follow-up reminders for whoever's email thread is open in Gmail
 ## Detailed description
 
 ```
-Gmail Notes puts a lightweight CRM-lite panel right next to your inbox —
+Noterra puts a lightweight CRM-lite panel right next to your inbox —
 no pipelines, no deal stages, just notes keyed by whoever you're emailing.
 
 • Open any thread in Gmail and the side panel shows notes, tags, and the
@@ -30,14 +30,14 @@ no pipelines, no deal stages, just notes keyed by whoever you're emailing.
 Sign in with Google — the same account you use for Gmail, no separate
 signup. 7 days free, then $3.99/month. Cancel anytime.
 
-Gmail Notes only reads the sender name/email and timestamp of the thread
+Noterra only reads the sender name/email and timestamp of the thread
 you have open — never message bodies or attachments. Full privacy policy:
-https://sarthakuwar.github.io/gmail-notes-panel/privacy.html
+https://sarthakuwar.github.io/noterra/privacy.html
 ```
 
 ## Single purpose statement
 
-Gmail Notes shows and edits a private note, tags, and a follow-up reminder
+Noterra shows and edits a private note, tags, and a follow-up reminder
 for the person whose email thread is currently open in Gmail.
 
 ## Permission justifications
@@ -65,7 +65,7 @@ for the person whose email thread is currently open in Gmail.
   write), **Website content** is NOT collected (no message bodies read).
 - Purpose: **App functionality** — not sold, not used for advertising, not
   used for purposes unrelated to the extension's single purpose above.
-- Privacy policy URL: `https://sarthakuwar.github.io/gmail-notes-panel/privacy.html`
+- Privacy policy URL: `https://sarthakuwar.github.io/noterra/privacy.html`
 
 ## Screenshots
 

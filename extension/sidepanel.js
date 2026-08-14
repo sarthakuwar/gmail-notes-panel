@@ -129,7 +129,7 @@ function showPaywall(status) {
   const btn = document.getElementById("paywall-btn");
   if (status === "canceled" || status === "past_due" || status === "unpaid") {
     title.textContent = "Your subscription needs attention";
-    copy.textContent = "Your trial or subscription has ended. Resubscribe to keep using Gmail Notes.";
+    copy.textContent = "Your trial or subscription has ended. Resubscribe to keep using Noterra.";
     btn.textContent = "Resubscribe — $3.99/month";
   } else {
     title.textContent = "Start your free trial";

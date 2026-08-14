@@ -53,7 +53,7 @@ function html(body: string, status = 200) {
 }
 
 const DONE_PAGE = `<!doctype html>
-<html><head><meta charset="utf-8"><title>Gmail Notes</title>
+<html><head><meta charset="utf-8"><title>Noterra</title>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
          display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;
